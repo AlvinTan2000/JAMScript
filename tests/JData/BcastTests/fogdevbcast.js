@@ -22,5 +22,5 @@ jasync function sendbcast() {
 setInterval(function() {
     console.log("Calling sendbcast...");
     sendbcast();
-}, 5);
+}, 2000);
 
