@@ -1,6 +1,7 @@
 
 jdata {
     char *y as broadcaster;
+    char *test as broadcaster;
 }
 
 jcond {
@@ -16,6 +17,7 @@ jasync function sendbcast() {
     var msg = "hello..from.." + jsys.type + "--" + count
     console.log(msg);
     y.broadcast(msg);
+    test.broadcast(msg);
 }
 
 
