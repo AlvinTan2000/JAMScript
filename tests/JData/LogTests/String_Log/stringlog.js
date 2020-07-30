@@ -31,4 +31,4 @@ setInterval(function() {
 	}
 
 	count = count + 1;
-    }, 1000);
+    }, 2500);
