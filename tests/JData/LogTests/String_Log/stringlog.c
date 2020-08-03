@@ -6,9 +6,9 @@ jasync logdata() {
     char buf[32];
 
     for (i = 0; i < 1000; i++) {
-	sprintf(buf, "%d-%s", i, names[i % 10]);
-	name = buf;
-	printf("Wrote .. name: %s\n", buf);
+//	sprintf(buf, "%d-%s", i, names[i % 10]);
+//	name = buf;
+//	printf("Wrote .. name: %s\n", buf);
 	jsleep(2500);
     }
 }
