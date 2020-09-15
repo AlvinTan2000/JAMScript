@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# Settings
+HOST=127.0.0.1
+SPORT=30000       # Sentinel Base Port
+RPORT=7000        # Replicas Base Port
+MPORT=8000        # Master Base Port
+TIMEOUT=2000      # Master timeout (ms)
+NODES=3
+APP=/home/regolith/JAMScript/tests/JData/LogTests/String_Log/stringlog.jxe      # JAMScript application to run
+APP1=/home/regolith/JAMScript/tests/Mobility/Logger/stringlog.jxe
+
+# Computed vars
+ENDPORT=$((SPORT+NODES))
+
+
+# Creates mandatory .config files for sentinels
+if [ "$1" == "create" ]
+then
+  TEMP=$MPORT
+  while [ $((SPORT < ENDPORT)) != "0" ];
+  do
+    SPORT=$((SPORT+1))
+	  TEMP=$((TEMP+1))
+
+    echo "Creating config for sentinel at $SPORT"
+
+    # Sentinel running port
+    echo "port $SPORT" > $SPORT.conf
+
+    # Monitor local master
+    echo "sentinel monitor master@$TEMP $HOST $TEMP 2" >> $SPORT.conf
+    echo "sentinel down-after-milliseconds master@$TEMP $TIMEOUT" >> $SPORT.conf
+
+    # Monitor "left" and "right masters
+    NODE1=$(( MPORT + (TEMP + 1)  % NODES + 1 ))
+    echo "sentinel monitor master@$NODE1 $HOST $NODE1 2" >> $SPORT.conf
+    echo "sentinel down-after-milliseconds master@$NODE1 $TIMEOUT" >> $SPORT.conf
+    NODE2=$(( MPORT + (TEMP + (NODES - 1))  % NODES + 1 ))
+    echo "sentinel monitor master@$NODE2 $HOST $NODE2 2" >> $SPORT.conf
+    echo "sentinel down-after-milliseconds master@$NODE2 $TIMEOUT" >> $SPORT.conf
+  done
+  exit 0
+fi
+
+
+if [ "$1" == "start" ]
+then
+  ./sentinelScript create
+
+  echo "Starting JAMScript application "xyz", "yzx" and "zyx" at the fog"
+  xterm -e jamrun $APP --fog --app=xyz --data=$HOST:$((MPORT+1)) --loc=1,0 &
+  xterm -e jamrun $APP --fog --app=xyz --data=$HOST:$((MPORT+2)) --loc=45,0 &
+  xterm -e jamrun $APP --fog --app=zyx --data=$HOST:$((MPORT+3)) --loc=90,0 &
+
+  while [ $((SPORT < ENDPORT)) != "0" ]; do
+  	SPORT=$((SPORT+1))
+  	MPORT=$((MPORT+1))
+  	RPORT=$((RPORT+1))
+
+    echo "Starting sentinel $SPORT and replica $RPORT"
+  	redis-sentinel $SPORT.conf --daemonize yes
+  	redis-server --port $RPORT --daemonize yes
+  	redis-cli -p $RPORT SLAVEOF $HOST $MPORT
+  done
+  
+  exit 0
+fi
+
+
+if [ "$1" == "stop" ]
+then
+  jam kill
+
+  while [ $((SPORT < ENDPORT)) != "0" ]; do
+    SPORT=$((SPORT+1))
+	  RPORT=$((RPORT+1))
+
+    echo "Stopping sentinel $SPORT and replica $RPORT"
+    redis-cli -p $SPORT shutdown nosave
+	  redis-cli -p $RPORT shutdown nosave
+  done
+
+  ./sentinelScript clean
+  exit 0
+fi
+
+
+if [ "$1" == "clean" ]
+then
+    rm -rf *.conf                       # Remove sentinel config
+    rm -r __jamruns/apps/stringlog*     # Remove jamrun metadata
+    exit 0
+fi
+
+
+if [ "$1" == "dev" ]
+then
+  echo "Starting JAMScript application "xyz""
+  xterm -e jamrun $APP --app=xyz --data=$HOST:$MPORT --link=near &
+  exit 0
+fi
+
+
+if [ "$1" == "fail" ]
+then
+  echo "Force failover the Redis at $((MPORT+1))"
+  redis-cli -p $((SPORT+1)) SENTINEL FAILOVER master@$((MPORT+1))
+  echo "Notice the associated JAMTerm will still output as normal"
+  exit 0
+fi
+
+
+echo "Usage: $0 [start|fail|dev|stop]"
+echo "start       -- Starts 3 JAMScript program at the fog with sentinels and replicas."
+echo "stop        -- Stop Redis sentinels and replicas instances."
+echo "dev         -- Starts a JAMScript program as the device level"
+echo "fail        -- Fails a fog to test the failover"
