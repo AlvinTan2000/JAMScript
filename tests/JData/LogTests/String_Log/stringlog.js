@@ -14,12 +14,12 @@ setInterval(function() {
 //    console.log("Lattitude ", jsys.lat);
 //    console.log("Link strategy ", jsys.link);
 
-	if (jsys.type === "cloud")
-	    nlogger.log("fred@cloud-" + count);
-	else if (jsys.type === "fog")
-	    nlogger.log("fred@fog-" + count);
-	else
-	    nlogger.log("fred@device-" + count);
+//	if (jsys.type === "cloud")
+//	    nlogger.log("fred@cloud-" + count);
+//	else if (jsys.type === "fog")
+//	    nlogger.log("fred@fog-" + count);
+//	else
+//	    nlogger.log("fred@device-" + count);
 
     for (i = 0; i < name.size(); i++) {
 	    if (name[i] !== undefined) {

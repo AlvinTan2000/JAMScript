@@ -166,7 +166,10 @@ void __jamdata_logto_server(redisAsyncContext *c, char *key, char *val, size_t s
 {
     if (val != NULL)
     {
-        redisAsyncCommand(c, callback, val, "ZADD %s %llu %b", key, time_stamp, val, size);
+        printf("XADD %s * %llu %b", key, time_stamp, val);
+        redisAsyncCommand(c, callback, val, "XADD %s * %llu %b", key, time_stamp, val, size);
+//        redisAsyncCommand(c, callback, val, "XADD %s * %llu test", key, time_stamp, NULL);
+
     }
 }
 
