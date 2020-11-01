@@ -159,6 +159,7 @@ char *jamdata_makekey(char *ns, char *lname)
 
 
 /*
+ * TODO: Change to log data based on <field, value> pair
  * This is strictly an internal function. Use this function to
  * send data to the Redis..
  */
@@ -166,14 +167,19 @@ void __jamdata_logto_server(redisAsyncContext *c, char *key, char *val, size_t s
 {
     if (val != NULL)
     {
-        printf("XADD %s * %llu %b", key, time_stamp, val);
-        redisAsyncCommand(c, callback, val, "XADD %s * %llu %b", key, time_stamp, val, size);
-//        redisAsyncCommand(c, callback, val, "XADD %s * %llu test", key, time_stamp, NULL);
+//        char* command_argv[] = {"XADD", key, "*"};
+//        char * ( *ptr )[] = &command_argv;
+//
+//        for (int i = 0; int j =0; i<val.length(); i++; j+=2) {
+//            (*ptr)[2+j] = "field";
+//            (*ptr)[2+j] = strdup(val[i]);
+//        }
+//
+//        redisAsyncCommandArgv(c, callback, val, 5, *ptr, NULL);
 
+        redisAsyncCommand(c, callback, val, "XADD %s * %llu %b", key, time_stamp, val, sizeof(val));
     }
 }
-
-
 
 
 void time_operation() {
@@ -240,6 +246,8 @@ void jamdata_logger_cb(redisAsyncContext *c, void *r, void *privdata)
         }
     }
 }
+
+// TODO: Removing encoding
 
 
 //fmt - string: format string such as "%s%d%f"
@@ -366,7 +374,8 @@ void jamdata_log_to_server_string(char *ns, char *lname, char *value) {
     unsigned long long timestamp = ms_time();
     char *key = jamdata_makekey(ns, lname);
 
-    comboptr_t *cptr = jamdata_simple_encode(key, timestamp, cbor_build_string(value));
+//    comboptr_t *cptr = jamdata_simple_encode(key, timestamp, cbor_build_string(value));
+    comboptr_t *cptr  = create_combo2llu_ptr(key, value, sizeof(value), timestamp);
 
     semqueue_enq(js->dataoutq, cptr, sizeof(comboptr_t));
 }
