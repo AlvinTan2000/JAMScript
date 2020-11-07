@@ -9,7 +9,7 @@ jasync logdata() {
 	sprintf(buf, "%d-%s", i, names[i % 10]);
 	name = buf;
 	printf("Wrote .. name: %s\n", buf);
-	jsleep(10);
+	jsleep(1000);
     }
 }
 

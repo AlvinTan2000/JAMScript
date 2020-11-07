@@ -167,17 +167,7 @@ void __jamdata_logto_server(redisAsyncContext *c, char *key, char *val, size_t s
 {
     if (val != NULL)
     {
-//        char* command_argv[] = {"XADD", key, "*"};
-//        char * ( *ptr )[] = &command_argv;
-//
-//        for (int i = 0; int j =0; i<val.length(); i++; j+=2) {
-//            (*ptr)[2+j] = "field";
-//            (*ptr)[2+j] = strdup(val[i]);
-//        }
-//
-//        redisAsyncCommandArgv(c, callback, val, 5, *ptr, NULL);
-
-        redisAsyncCommand(c, callback, val, "XADD %s * %llu %b", key, time_stamp, val, sizeof(val));
+        redisAsyncCommand(c, callback, val, "XADD %s * %llu %b", key, time_stamp, val, size);
     }
 }
 
@@ -357,11 +347,11 @@ comboptr_t *jamdata_simple_encode(char *redis_key, unsigned long long timestamp,
         .value = cbor_move(value)
     });
 
-    cbor_map_add(root, (struct cbor_pair)
-    {
-        .key = cbor_move(cbor_build_string("timestamp")),
-        .value = cbor_move(cbor_build_uint64(timestamp))
-    });
+//    cbor_map_add(root, (struct cbor_pair)
+//    {
+//        .key = cbor_move(cbor_build_string("timestamp")),
+//        .value = cbor_move(cbor_build_uint64(timestamp))
+//    });
 
     cbor_serialize_alloc(root, &buffer, &len);
     cbor_decref(&root);
@@ -374,8 +364,7 @@ void jamdata_log_to_server_string(char *ns, char *lname, char *value) {
     unsigned long long timestamp = ms_time();
     char *key = jamdata_makekey(ns, lname);
 
-//    comboptr_t *cptr = jamdata_simple_encode(key, timestamp, cbor_build_string(value));
-    comboptr_t *cptr  = create_combo2llu_ptr(key, value, sizeof(value), timestamp);
+    comboptr_t *cptr = jamdata_simple_encode(key, timestamp, cbor_build_string(value));
 
     semqueue_enq(js->dataoutq, cptr, sizeof(comboptr_t));
 }
